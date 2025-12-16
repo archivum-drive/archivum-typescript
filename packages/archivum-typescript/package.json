@@ -1,0 +1,14 @@
+{
+	"name": "archivum-typescript",
+	"module": "src/index.ts",
+	"type": "module",
+	"dependencies": {
+		"archivum-core-wasm": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	}
+}

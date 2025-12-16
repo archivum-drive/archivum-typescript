@@ -1,0 +1,7 @@
+{
+	"name": "archivum-core-wasm",
+	"private": true,
+	"scripts": {
+		"build": "wasm-pack build --release --target bundler --out-dir ../../packages/archivum-core-wasm"
+	}
+}
