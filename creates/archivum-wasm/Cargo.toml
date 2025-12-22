@@ -7,13 +7,15 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [dependencies]
-#archivum-core = { path = "../../../archivum-core" }
-archivum-core = { git = "https://github.com/archivum-drive/archivum-core.git" }
+archivum-core = { path = "../../../archivum-core" }
+#archivum-core = { git = "https://github.com/archivum-drive/archivum-core.git" }
 
 wasm-bindgen = "0.2"
 uuid = { version = "1", features = ["std"] }
 console_error_panic_hook = "0.1"
 smallvec = "1"
+js-sys = "0.3.83"
+serde-wasm-bindgen = "0.6"
 
 [profile.release]
 lto = true
