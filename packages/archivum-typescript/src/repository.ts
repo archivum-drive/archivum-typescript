@@ -56,6 +56,13 @@ function normalizeNodeType(data: unknown): NodeType {
   return EMPTY_NODE_DATA;
 }
 
+function toCoreNodeData(nodeType: NodeType): unknown {
+  // Rust expects an enum-like shape: { File: {...} } or { Bookmark: {...} }
+  // The TS-only discriminant `type` must not be sent to core.
+  if (nodeType.type === "file") return { File: nodeType.File };
+  return { Bookmark: nodeType.Bookmark };
+}
+
 export class Repository {
   private repo: CoreRepository;
 
@@ -106,7 +113,7 @@ export class Repository {
   upsertNode(node: Node): void {
     this.repo.upsertNode(
       node.id,
-      node.data,
+      toCoreNodeData(node.data),
       node.date_created,
       node.date_updated
     );
