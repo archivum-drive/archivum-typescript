@@ -1,9 +1,9 @@
 use wasm_bindgen::prelude::*;
 
 use archivum_core::{
-    node::{NodeId, NodeRecord},
+    node::{ NodeId, NodeRecord },
     repository::Repository as CoreRepository,
-    tag::{TagId, TagRecord},
+    tag::{ TagId, TagRecord },
 };
 
 fn uuid_str_to_u128(s: &str) -> Result<u128, JsValue> {
@@ -40,20 +40,32 @@ impl Repository {
         }
     }
 
+    #[wasm_bindgen(js_name = "loadFromJson")]
+    pub fn load_from_json(json: String) -> Result<Repository, JsValue> {
+        let inner = CoreRepository::load_from_json(&json).map_err(|e|
+            JsValue::from_str(&format!("{e:?}"))
+        )?;
+
+        Ok(Repository { inner })
+    }
+
+    #[wasm_bindgen(js_name = "saveToJson")]
+    pub fn save_to_json(&self) -> Result<String, JsValue> {
+        self.inner.save_to_json().map_err(|e| JsValue::from_str(&format!("{e:?}")))
+    }
+
     #[wasm_bindgen(js_name = "upsertNode")]
     pub fn upsert_node(
         &mut self,
         node_id_uuid: String,
         date_created: String,
-        date_updated: String,
+        date_updated: String
     ) -> Result<(), JsValue> {
         let id = node_id_from_uuid(&node_id_uuid)?;
 
         let node = NodeRecord::new(id, smallvec::smallvec![], date_created, date_updated);
 
-        self.inner
-            .upsert_node(node)
-            .map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+        self.inner.upsert_node(node).map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
 
         Ok(())
     }
@@ -64,9 +76,7 @@ impl Repository {
 
         let tag = TagRecord::new(id, path, None);
 
-        self.inner
-            .upsert_tag(tag)
-            .map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+        self.inner.upsert_tag(tag).map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
 
         Ok(())
     }
@@ -74,7 +84,7 @@ impl Repository {
     #[wasm_bindgen(js_name = "getTagByPath")]
     pub fn get_tag_by_path(&mut self, path: Vec<String>) -> Result<Option<String>, JsValue> {
         match self.inner.get_tag_by_path(path) {
-            Ok(tag) => Ok(Some(u128_to_uuid_str(tag.0))),
+            Ok(tag) => Ok(Some(u128_to_uuid_str(tag.get_id().0))),
             Err(e) => Err(JsValue::from_str(&format!("{e:?}"))),
         }
     }
@@ -84,9 +94,7 @@ impl Repository {
         let node_id = node_id_from_uuid(&node_id_uuid)?;
         let tag_id = tag_id_from_uuid(&tag_id_uuid)?;
 
-        self.inner
-            .tag_node(node_id, tag_id)
-            .map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+        self.inner.tag_node(node_id, tag_id).map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
 
         Ok(())
     }
