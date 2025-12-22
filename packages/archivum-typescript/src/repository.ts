@@ -11,14 +11,50 @@ type CoreTag = {
 
 type CoreNode = {
   id: number;
-  data?: NodeType;
+  data?: unknown;
   tag_ids?: number[];
   date_created: string;
   date_updated: string;
 };
 
 const DEFAULT_TAG_COLOR: TagColor = "gray";
-const EMPTY_NODE_DATA: NodeType = { File: { filename: "", size: 0 } };
+const EMPTY_NODE_DATA: NodeType = {
+  File: { filename: "", size: 0 },
+  type: "file",
+};
+
+// todo: better solution ??
+function normalizeNodeType(data: unknown): NodeType {
+  if (!data || typeof data !== "object") return EMPTY_NODE_DATA;
+
+  const record = data as Record<string, unknown>;
+
+  // Preferred: already has the discriminant.
+  if (
+    record.type === "file" &&
+    record.File &&
+    typeof record.File === "object"
+  ) {
+    return { File: record.File as any, type: "file" };
+  }
+  if (
+    record.type === "bookmark" &&
+    record.Bookmark &&
+    typeof record.Bookmark === "object"
+  ) {
+    return { Bookmark: record.Bookmark as any, type: "bookmark" };
+  }
+
+  // Backward-compatible: infer from the enum-like shape produced by Rust/serde.
+  if (record.File && typeof record.File === "object") {
+    return { File: record.File as any, type: "file" };
+  }
+  if (record.Bookmark && typeof record.Bookmark === "object") {
+    return { Bookmark: record.Bookmark as any, type: "bookmark" };
+  }
+
+  return EMPTY_NODE_DATA;
+}
 
 export class Repository {
   private repo: CoreRepository;
@@ -89,9 +125,11 @@ export class Repository {
       .map((id) => tagMap.get(id))
       .filter((t): t is Tag => Boolean(t));
 
+    const data = normalizeNodeType(coreNode.data);
+
     return new Node(
       coreNode.id,
-      coreNode.data ?? EMPTY_NODE_DATA,
+      data,
       tags,
       coreNode.date_created,
       coreNode.date_updated
@@ -107,13 +145,9 @@ export class Repository {
         .map((id) => tagMap.get(id))
         .filter((t): t is Tag => Boolean(t));
 
-      return new Node(
-        n.id,
-        n.data ?? EMPTY_NODE_DATA,
-        tags,
-        n.date_created,
-        n.date_updated
-      );
+      const data = normalizeNodeType(n.data);
+
+      return new Node(n.id, data, tags, n.date_created, n.date_updated);
     });
   }
 
@@ -134,13 +168,9 @@ export class Repository {
         .map((id) => tagMap.get(id))
         .filter((t): t is Tag => Boolean(t));
 
-      return new Node(
-        n.id,
-        n.data ?? EMPTY_NODE_DATA,
-        tags,
-        n.date_created,
-        n.date_updated
-      );
+      const data = normalizeNodeType(n.data);
+
+      return new Node(n.id, data, tags, n.date_created, n.date_updated);
     });
   }
 }

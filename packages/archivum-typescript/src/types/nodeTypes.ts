@@ -8,4 +8,6 @@ export interface Bookmark {
   title?: string;
 }
 
-export type NodeType = { File: File } | { Bookmark: Bookmark };
+export type NodeType =
+  | { File: File; type: "file" }
+  | { Bookmark: Bookmark; type: "bookmark" };
