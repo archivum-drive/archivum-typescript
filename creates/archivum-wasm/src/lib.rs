@@ -160,6 +160,22 @@ impl Repository {
         Ok(arr)
     }
 
+    #[wasm_bindgen(js_name = "getChildTags")]
+    pub fn get_child_tags(&self, parent_tag_id: u32) -> Result<js_sys::Array, JsValue> {
+        let parent_id = TagId(parent_tag_id);
+        let arr = js_sys::Array::new();
+
+        if let Some(children) = self.inner.get_child_tags(parent_id) {
+            for tag_id in children {
+                if let Some(tag) = self.inner.get_tag(*tag_id) {
+                    arr.push(&tag_to_js(&tag)?);
+                }
+            }
+        }
+
+        Ok(arr)
+    }
+
     //
     // Get Nodes/Tags
     //
@@ -196,7 +212,7 @@ impl Repository {
     #[wasm_bindgen(js_name = "getTagByPath")]
     pub fn get_tag_by_path(&mut self, path: Vec<String>) -> Result<u32, JsValue> {
         match self.inner.get_tag_by_path(path) {
-            Ok(tag) => Ok(tag.get_id().0),
+            Ok(tag_id) => Ok(tag_id.0),
             Err(e) => Err(JsValue::from_str(&format!("{e:?}"))),
         }
     }

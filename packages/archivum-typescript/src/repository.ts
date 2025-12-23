@@ -105,8 +105,12 @@ export class Repository {
   getTagByPath(path: string): Tag | undefined {
     const parts = path.split("/").filter(Boolean);
     const tagId = this.repo.getTagByPath(parts);
-    if (!tagId) return undefined;
     return this.getTag(tagId);
+  }
+
+  getChildTags(parentTagId: number): Tag[] {
+    const coreTags = this.repo.getChildTags(parentTagId) as CoreTag[];
+    return coreTags.map((t) => new Tag(t.id, t.path, DEFAULT_TAG_COLOR));
   }
 
   // Nodes
