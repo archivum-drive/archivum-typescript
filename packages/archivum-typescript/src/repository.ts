@@ -1,8 +1,9 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: wasm shenanigans */
 import { Repository as CoreRepository } from "archivum-core-wasm";
-import { Tag } from "./types/tag";
 import { Node } from "./types/node";
-import type { TagColor } from "./types/tag";
 import type { NodeType } from "./types/nodeTypes";
+import type { TagColor } from "./types/tag";
+import { Tag } from "./types/tag";
 
 type CoreTag = {
   id: number;
@@ -102,10 +103,18 @@ export class Repository {
     return coreTags.map((t) => new Tag(t.id, t.path, DEFAULT_TAG_COLOR));
   }
 
-  getTagByPath(path: string): Tag | undefined {
-    const parts = path.split("/").filter(Boolean);
-    const tagId = this.repo.getTagByPath(parts);
-    return this.getTag(tagId);
+  getNextTagId(): number {
+    return this.repo.getNextTagId();
+  }
+
+  getTagByPath(pathSegments: string[]): Tag | undefined {
+    try {
+      const tagId = this.repo.getTagByPath(pathSegments);
+      return this.getTag(tagId);
+    } catch (e) {
+      console.warn(`Tag not found for path: ${pathSegments}:, ${e}`);
+      return undefined;
+    }
   }
 
   getChildTags(parentTagId: number): Tag[] {
@@ -119,7 +128,7 @@ export class Repository {
       node.id,
       toCoreNodeData(node.data),
       node.date_created,
-      node.date_updated
+      node.date_updated,
     );
   }
 
@@ -143,7 +152,7 @@ export class Repository {
       data,
       tags,
       coreNode.date_created,
-      coreNode.date_updated
+      coreNode.date_updated,
     );
   }
 
@@ -162,6 +171,10 @@ export class Repository {
     });
   }
 
+  getNextNodeId(): number {
+    return this.repo.getNextNodeId();
+  }
+
   tagNode(nodeId: number, tagId: number): void {
     this.repo.tagNode(nodeId, tagId);
   }
@@ -171,17 +184,21 @@ export class Repository {
   }
 
   getNodesWithTag(tagId: number): Node[] {
-    const coreNodes = this.repo.getNodesWithTag(tagId) as CoreNode[];
-    const tagMap = new Map(this.getAllTags().map((t) => [t.id, t] as const));
+    try {
+      const coreNodes = this.repo.getNodesWithTag(tagId) as CoreNode[];
+      const tagMap = new Map(this.getAllTags().map((t) => [t.id, t] as const));
 
-    return coreNodes.map((n) => {
-      const tags = (n.tag_ids ?? [])
-        .map((id) => tagMap.get(id))
-        .filter((t): t is Tag => Boolean(t));
+      return coreNodes.map((n) => {
+        const tags = (n.tag_ids ?? [])
+          .map((id) => tagMap.get(id))
+          .filter((t): t is Tag => Boolean(t));
 
-      const data = normalizeNodeType(n.data);
+        const data = normalizeNodeType(n.data);
 
-      return new Node(n.id, data, tags, n.date_created, n.date_updated);
-    });
+        return new Node(n.id, data, tags, n.date_created, n.date_updated);
+      });
+    } catch {
+      return [];
+    }
   }
 }

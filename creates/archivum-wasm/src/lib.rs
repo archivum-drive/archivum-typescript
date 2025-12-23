@@ -160,6 +160,11 @@ impl Repository {
         Ok(arr)
     }
 
+    #[wasm_bindgen(js_name = "getNextTagId")]
+    pub fn get_next_tag_id(&mut self) -> u32 {
+        self.inner.get_next_tag_id().0
+    }
+
     #[wasm_bindgen(js_name = "getChildTags")]
     pub fn get_child_tags(&self, parent_tag_id: u32) -> Result<js_sys::Array, JsValue> {
         let parent_id = TagId(parent_tag_id);
@@ -186,6 +191,11 @@ impl Repository {
             arr.push(&node_to_js(node)?);
         }
         Ok(arr)
+    }
+
+    #[wasm_bindgen(js_name = "getNextNodeId")]
+    pub fn get_next_node_id(&mut self) -> u32 {
+        self.inner.get_next_node_id().0
     }
 
     #[wasm_bindgen(js_name = "getNode")]
@@ -242,14 +252,11 @@ impl Repository {
         let tag_id = TagId(tag_id);
         let arr = js_sys::Array::new();
 
-        for node in self.inner.iter_nodes() {
-            if
-                node
-                    .get_tags()
-                    .iter()
-                    .any(|t| *t == tag_id)
-            {
-                arr.push(&node_to_js(node)?);
+        if let Ok(node_ids) = self.inner.get_nodes_with_tag(tag_id) {
+            for node_id in node_ids {
+                if let Some(node) = self.inner.get_node(node_id) {
+                    arr.push(&node_to_js(&node)?);
+                }
             }
         }
 
