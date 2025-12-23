@@ -4,7 +4,7 @@ use archivum_core::{
     node::{ NodeId, NodeRecord },
     node_type::NodeType,
     repository::Repository as CoreRepository,
-    tag::{ TagId, TagRecord },
+    tag::{ TagColors, TagId, TagRecord },
 };
 
 fn tag_to_js(tag: &TagRecord) -> Result<JsValue, JsValue> {
@@ -21,6 +21,12 @@ fn tag_to_js(tag: &TagRecord) -> Result<JsValue, JsValue> {
         path_arr.push(&JsValue::from_str(p));
     }
     js_sys::Reflect::set(&obj, &JsValue::from_str("path"), &path_arr)?;
+
+    js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("color"),
+        &JsValue::from_str((*tag.get_color()).into())
+    )?;
 
     Ok(obj.into())
 }
@@ -125,10 +131,16 @@ impl Repository {
     }
 
     #[wasm_bindgen(js_name = "upsertTag")]
-    pub fn upsert_tag(&mut self, tag_id: u32, path: Vec<String>) -> Result<(), JsValue> {
+    pub fn upsert_tag(
+        &mut self,
+        tag_id: u32,
+        path: Vec<String>,
+        color: String
+    ) -> Result<(), JsValue> {
         let id = TagId(tag_id);
+        let color: TagColors = color.parse().map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
 
-        let tag = TagRecord::new(id, path, None);
+        let tag = TagRecord::new(id, path, Some(color));
 
         self.inner.upsert_tag(tag).map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
 

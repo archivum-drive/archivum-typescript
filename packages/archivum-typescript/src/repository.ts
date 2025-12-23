@@ -8,6 +8,7 @@ import { Tag } from "./types/tag";
 type CoreTag = {
   id: number;
   path: string[];
+  color?: string;
 };
 
 type CoreNode = {
@@ -18,7 +19,6 @@ type CoreNode = {
   date_updated: string;
 };
 
-const DEFAULT_TAG_COLOR: TagColor = "gray";
 const EMPTY_NODE_DATA: NodeType = {
   File: { filename: "", size: 0 },
   type: "file",
@@ -84,7 +84,7 @@ export class Repository {
 
   // Tags
   upsertTag(tag: Tag): void {
-    this.repo.upsertTag(tag.id, tag.path);
+    this.repo.upsertTag(tag.id, tag.path, tag.color);
   }
 
   deleteTag(tagId: number): void {
@@ -94,13 +94,12 @@ export class Repository {
   getTag(tagId: number): Tag | undefined {
     const coreTag = this.repo.getTag(tagId) as CoreTag | undefined;
     if (!coreTag) return undefined;
-    // Color is currently not persisted in core; default to gray.
-    return new Tag(coreTag.id, coreTag.path, DEFAULT_TAG_COLOR);
+    return new Tag(coreTag.id, coreTag.path, coreTag.color as TagColor);
   }
 
   getAllTags(): Tag[] {
     const coreTags = this.repo.getAllTags() as CoreTag[];
-    return coreTags.map((t) => new Tag(t.id, t.path, DEFAULT_TAG_COLOR));
+    return coreTags.map((t) => new Tag(t.id, t.path, t.color as TagColor));
   }
 
   getNextTagId(): number {
@@ -119,7 +118,7 @@ export class Repository {
 
   getChildTags(parentTagId: number): Tag[] {
     const coreTags = this.repo.getChildTags(parentTagId) as CoreTag[];
-    return coreTags.map((t) => new Tag(t.id, t.path, DEFAULT_TAG_COLOR));
+    return coreTags.map((t) => new Tag(t.id, t.path, t.color as TagColor));
   }
 
   // Nodes
