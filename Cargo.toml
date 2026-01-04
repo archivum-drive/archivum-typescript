@@ -1,0 +1,26 @@
+[package]
+name = "archivum-typescript"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = true
+opt-level = "s"
+
+[dependencies]
+archivum-core = { path = "../archivum-core", features = ["wasm"] }
+# archivum-core = { git = "https://github.com/archivum-drive/archivum-core.git", branch = "main", features = ["wasm"]}
+
+wasm-bindgen = "0.2"
+reqwest = "0.13.1"
+console_error_panic_hook = "0.1.7"
+js-sys = "0.3.83"
+smallvec = "1"
+tsify = { version = "0.5.6", features = [
+  "js",
+  "wasm-bindgen",
+], default-features = false }
+serde = "1.0.228"
