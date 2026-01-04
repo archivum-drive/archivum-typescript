@@ -1,11 +1,14 @@
-use archivum_core::{ node::{ NodeId, NodeRecord }, tag::{ TagId, TagRecord } };
+use archivum_core::{ blob::DataBlob, node::{ NodeId, NodeRecord }, tag::{ TagId, TagRecord } };
 use wasm_bindgen::{ prelude::wasm_bindgen, JsValue };
 
 use archivum_core::state::repository::Repository as CoreRepository;
 
+use crate::network_blob_store::NetworkBlobStore;
+
 #[wasm_bindgen]
 pub struct Repository {
     inner: CoreRepository,
+    blob_store: NetworkBlobStore,
 }
 
 #[wasm_bindgen]
@@ -14,22 +17,23 @@ impl Repository {
     // Constructor and load/save
     //
     #[wasm_bindgen(constructor)]
-    pub fn new() -> Repository {
+    pub fn new(store_url: String) -> Repository {
         // Better panic messages in browser console
         console_error_panic_hook::set_once();
 
         Repository {
             inner: CoreRepository::new(),
+            blob_store: NetworkBlobStore::new(store_url),
         }
     }
 
     #[wasm_bindgen(js_name = "loadFromJson")]
-    pub fn load_from_json(json: String) -> Result<Repository, JsValue> {
+    pub fn load_from_json(store_url: String, json: String) -> Result<Repository, JsValue> {
         let inner = CoreRepository::load_from_json(&json).map_err(|e|
             JsValue::from_str(&format!("{e:?}"))
         )?;
 
-        Ok(Repository { inner })
+        Ok(Repository { inner, blob_store: NetworkBlobStore::new(store_url) })
     }
 
     #[wasm_bindgen(js_name = "saveToJson")]
@@ -155,10 +159,22 @@ impl Repository {
     pub fn get_next_tag_id(&mut self) -> TagId {
         self.inner.get_next_tag_id()
     }
-}
 
-impl Default for Repository {
-    fn default() -> Self {
-        Self::new()
+    //
+    // Data Blob operations
+    //
+
+    #[wasm_bindgen(js_name = "uploadBlob")]
+    pub async fn upload_blob(&mut self, data: &[u8]) -> Result<DataBlob, JsValue> {
+        self.inner
+            .upload_data(&mut self.blob_store, data).await
+            .map_err(|e| JsValue::from_str(&format!("{e:?}")))
+    }
+
+    #[wasm_bindgen(js_name = "downloadBlob")]
+    pub async fn download_blob(&mut self, blob: DataBlob) -> Result<Vec<u8>, JsValue> {
+        blob.retrieve_data(&mut self.blob_store).await.map_err(|e|
+            JsValue::from_str(&format!("{e:?}"))
+        )
     }
 }

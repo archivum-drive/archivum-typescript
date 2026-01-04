@@ -24,3 +24,5 @@ tsify = { version = "0.5.6", features = [
   "wasm-bindgen",
 ], default-features = false }
 serde = "1.0.228"
+wasm-bindgen-futures = "0.4.56"
+thiserror = "2.0.17"

@@ -9,6 +9,7 @@ dependencies = [
  "blake3",
  "getset",
  "js-sys",
+ "reqwest",
  "roaring",
  "serde",
  "serde_json",
@@ -27,8 +28,10 @@ dependencies = [
  "reqwest",
  "serde",
  "smallvec",
+ "thiserror 2.0.17",
  "tsify",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]
