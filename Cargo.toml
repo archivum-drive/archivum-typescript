@@ -12,8 +12,10 @@ lto = true
 opt-level = "s"
 
 [dependencies]
-archivum-core = { path = "../archivum-core", features = ["wasm"] }
-# archivum-core = { git = "https://github.com/archivum-drive/archivum-core.git", branch = "main", features = ["wasm"]}
+# archivum-core = { path = "../archivum-core", features = ["wasm"] }
+archivum-core = { git = "https://github.com/archivum-drive/archivum-core.git", branch = "main", features = [
+  "wasm",
+] }
 
 wasm-bindgen = "0.2"
 reqwest = "0.13.1"

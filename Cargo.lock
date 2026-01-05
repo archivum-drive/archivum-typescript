@@ -5,6 +5,7 @@ version = 4
 [[package]]
 name = "archivum-core"
 version = "0.1.0"
+source = "git+https://github.com/archivum-drive/archivum-core.git?branch=main#831e53b73d608662444c5e14da63002204706e4f"
 dependencies = [
  "blake3",
  "getset",
