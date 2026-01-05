@@ -74,6 +74,19 @@ impl BlobStore for NetworkBlobStore {
             _ => Err(NetworkBlobStoreError::NetworkError(String::from("Failed to download blob"))),
         }
     }
+
+    async fn check_exists(
+        &self,
+        blob_id: &archivum_core::blob::BlobId
+    ) -> Result<bool, Self::Error> {
+        let client = Client::new();
+        let res = client.head(self.remote_url.join(&blob_id.to_string()).unwrap()).send().await;
+        match res {
+            Ok(response) => Ok(response.status().is_success()),
+            Err(err) =>
+                Err(NetworkBlobStoreError::NetworkError(format!("check_exists failed: {:?}", err))),
+        }
+    }
 }
 
 #[derive(thiserror::Error, Debug)]

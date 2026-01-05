@@ -124,7 +124,7 @@ impl Repository {
         let tag_ids = self.inner.get_child_tags(parent);
 
         tag_ids.map(|ids| {
-            ids.into_iter()
+            ids.iter()
                 .filter_map(|id| self.inner.get_tag(*id))
                 .collect()
         })
@@ -173,8 +173,6 @@ impl Repository {
 
     #[wasm_bindgen(js_name = "downloadBlob")]
     pub async fn download_blob(&mut self, blob: DataBlob) -> Result<Vec<u8>, JsValue> {
-        blob.retrieve_data(&mut self.blob_store).await.map_err(|e|
-            JsValue::from_str(&format!("{e:?}"))
-        )
+        blob.retrieve_data(&self.blob_store).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 }

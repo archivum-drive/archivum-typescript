@@ -9,7 +9,6 @@ dependencies = [
  "blake3",
  "getset",
  "js-sys",
- "reqwest",
  "roaring",
  "serde",
  "serde_json",
