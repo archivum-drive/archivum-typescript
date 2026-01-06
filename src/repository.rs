@@ -3,11 +3,14 @@ use wasm_bindgen::{ prelude::wasm_bindgen, JsValue };
 
 use archivum_core::state::repository::Repository as CoreRepository;
 
-use crate::network_blob_store::NetworkBlobStore;
+use crate::{
+    metadata_storage::{ LocalstorageMetadataStorage },
+    network_blob_store::NetworkBlobStore,
+};
 
 #[wasm_bindgen]
 pub struct Repository {
-    inner: CoreRepository,
+    inner: CoreRepository<LocalstorageMetadataStorage>,
     blob_store: NetworkBlobStore,
 }
 
@@ -22,23 +25,19 @@ impl Repository {
         console_error_panic_hook::set_once();
 
         Repository {
-            inner: CoreRepository::new(),
+            inner: CoreRepository::new(LocalstorageMetadataStorage),
             blob_store: NetworkBlobStore::new(store_url),
         }
     }
 
-    #[wasm_bindgen(js_name = "loadFromJson")]
-    pub fn load_from_json(store_url: String, json: String) -> Result<Repository, JsValue> {
-        let inner = CoreRepository::load_from_json(&json).map_err(|e|
-            JsValue::from_str(&format!("{e:?}"))
-        )?;
-
-        Ok(Repository { inner, blob_store: NetworkBlobStore::new(store_url) })
+    #[wasm_bindgen(js_name = "loadLocal")]
+    pub async fn load_local(&mut self) -> Result<(), JsValue> {
+        self.inner.load_local().await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 
-    #[wasm_bindgen(js_name = "saveToJson")]
-    pub fn save_to_json(&self) -> Result<String, JsValue> {
-        self.inner.save_to_json().map_err(|e| JsValue::from_str(&format!("{e:?}")))
+    #[wasm_bindgen(js_name = "saveLocal")]
+    pub async fn save_local(&self) -> Result<(), JsValue> {
+        self.inner.save_local().await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 
     //
@@ -47,14 +46,14 @@ impl Repository {
 
     /// Returns the `NodeId` of the upserted node.
     #[wasm_bindgen(js_name = "upsertNode")]
-    pub fn upsert_node(&mut self, node: NodeRecord) -> Result<(), JsValue> {
-        self.inner.upsert_node(node).map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+    pub async fn upsert_node(&mut self, node: NodeRecord) -> Result<(), JsValue> {
+        self.inner.upsert_node(node).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = "upsertTag")]
-    pub fn upsert_tag(&mut self, tag: TagRecord) -> Result<(), JsValue> {
-        self.inner.upsert_tag(tag).map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+    pub async fn upsert_tag(&mut self, tag: TagRecord) -> Result<(), JsValue> {
+        self.inner.upsert_tag(tag).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
 
         Ok(())
     }
@@ -88,14 +87,14 @@ impl Repository {
     // delete operations
     //
     #[wasm_bindgen(js_name = "deleteNode")]
-    pub fn delete_node(&mut self, node_id: NodeId) -> Result<(), JsValue> {
-        self.inner.delete_node(node_id).map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+    pub async fn delete_node(&mut self, node_id: NodeId) -> Result<(), JsValue> {
+        self.inner.delete_node(node_id).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = "deleteTag")]
-    pub fn delete_tag(&mut self, tag_id: TagId) -> Result<(), JsValue> {
-        self.inner.delete_tag(tag_id).map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+    pub async fn delete_tag(&mut self, tag_id: TagId) -> Result<(), JsValue> {
+        self.inner.delete_tag(tag_id).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
         Ok(())
     }
 
@@ -104,14 +103,18 @@ impl Repository {
     //
 
     #[wasm_bindgen(js_name = "tagNode")]
-    pub fn tag_node(&mut self, node_id: NodeId, tag_id: TagId) -> Result<(), JsValue> {
-        self.inner.tag_node(node_id, tag_id).map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+    pub async fn tag_node(&mut self, node_id: NodeId, tag_id: TagId) -> Result<(), JsValue> {
+        self.inner
+            .tag_node(node_id, tag_id).await
+            .map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = "untagNode")]
-    pub fn untag_node(&mut self, node_id: NodeId, tag_id: TagId) -> Result<(), JsValue> {
-        self.inner.untag_node(node_id, tag_id).map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+    pub async fn untag_node(&mut self, node_id: NodeId, tag_id: TagId) -> Result<(), JsValue> {
+        self.inner
+            .untag_node(node_id, tag_id).await
+            .map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
         Ok(())
     }
 
