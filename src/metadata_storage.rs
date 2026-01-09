@@ -6,7 +6,7 @@ pub struct LocalstorageMetadataStorage;
 impl LocalMetadataStorage for LocalstorageMetadataStorage {
     type Error = LocalstorageMetadataStorageError;
 
-    async fn save_metadata(&self, json: &str) -> Result<(), Self::Error> {
+    async fn save_metadata(&mut self, json: &str) -> Result<(), Self::Error> {
         LocalStorage::set("archivum-drive-repo", json).map_err(|e|
             LocalstorageMetadataStorageError::LocalstorageError(e.to_string())
         )

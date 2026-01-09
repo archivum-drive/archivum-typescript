@@ -1,6 +1,6 @@
 [package]
 name = "archivum-typescript"
-version = "0.1.0-2"
+version = "0.1.0-3"
 edition = "2024"
 repository = "https://github.com/archivum-drive/archivum-typescript"
 

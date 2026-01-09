@@ -1,17 +1,18 @@
-use archivum_core::{ blob::DataBlob, node::{ NodeId, NodeRecord }, tag::{ TagId, TagRecord } };
 use wasm_bindgen::{ prelude::wasm_bindgen, JsValue };
 
-use archivum_core::state::repository::Repository as CoreRepository;
-
-use crate::{
-    metadata_storage::{ LocalstorageMetadataStorage },
-    network_blob_store::NetworkBlobStore,
+use archivum_core::{
+    blob_storage::{ blob::DataBlob, blob_store::ArchivumBlobServerStore },
+    node::{ NodeId, NodeRecord },
+    state::repository::Repository as CoreRepository,
+    tag::{ TagId, TagRecord },
 };
+
+use crate::{ metadata_storage::{ LocalstorageMetadataStorage } };
 
 #[wasm_bindgen]
 pub struct Repository {
     inner: CoreRepository<LocalstorageMetadataStorage>,
-    blob_store: NetworkBlobStore,
+    blob_store: ArchivumBlobServerStore,
 }
 
 #[wasm_bindgen]
@@ -26,7 +27,7 @@ impl Repository {
 
         Repository {
             inner: CoreRepository::new(LocalstorageMetadataStorage),
-            blob_store: NetworkBlobStore::new(store_url),
+            blob_store: ArchivumBlobServerStore::new(store_url),
         }
     }
 
@@ -36,7 +37,7 @@ impl Repository {
     }
 
     #[wasm_bindgen(js_name = "saveLocal")]
-    pub async fn save_local(&self) -> Result<(), JsValue> {
+    pub async fn save_local(&mut self) -> Result<(), JsValue> {
         self.inner.save_local().await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 
