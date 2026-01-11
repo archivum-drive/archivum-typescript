@@ -4,7 +4,10 @@ use archivum_core::{
     blob_storage::{ blob::DataBlob, blob_store::ArchivumBlobServerStore },
     node::{ Node, NodeId },
     node_type::NodeType,
-    state::repository::Repository as CoreRepository,
+    state::{
+        repository::Repository as CoreRepository,
+        sync::archivum_metadata_server_storage::ArchivumMetadataServerStorage,
+    },
     tag::{ TagColors, TagId, TagRecord },
 };
 
@@ -13,6 +16,7 @@ use crate::{ metadata_storage::{ LocalstorageMetadataStorage } };
 #[wasm_bindgen]
 pub struct Repository {
     inner: CoreRepository<LocalstorageMetadataStorage>,
+    metadata_storage: ArchivumMetadataServerStorage,
     blob_store: ArchivumBlobServerStore,
 }
 
@@ -22,14 +26,33 @@ impl Repository {
     // Constructor and load/save
     //
     #[wasm_bindgen(constructor)]
-    pub fn new(client_id: String, store_url: String) -> Repository {
+    pub fn new(
+        client_id: String,
+        metadata_server_url: String,
+        blob_store_url: String
+    ) -> Repository {
         // Better panic messages in browser console
         console_error_panic_hook::set_once();
 
         Repository {
             inner: CoreRepository::new(client_id.parse().unwrap(), LocalstorageMetadataStorage),
-            blob_store: ArchivumBlobServerStore::new(store_url),
+            metadata_storage: ArchivumMetadataServerStorage::new(metadata_server_url),
+            blob_store: ArchivumBlobServerStore::new(blob_store_url),
         }
+    }
+
+    #[wasm_bindgen(js_name = "pullRemote")]
+    pub async fn pull_remote(&mut self) -> Result<(), JsValue> {
+        self.inner
+            .pull_remote(&self.metadata_storage).await
+            .map_err(|e| JsValue::from_str(&format!("{e:?}")))
+    }
+
+    #[wasm_bindgen(js_name = "pushRemote")]
+    pub async fn push_remote(&mut self) -> Result<(), JsValue> {
+        self.inner
+            .push_remote(&self.metadata_storage).await
+            .map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 
     #[wasm_bindgen(js_name = "loadLocal")]
