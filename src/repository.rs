@@ -2,9 +2,10 @@ use wasm_bindgen::{ prelude::wasm_bindgen, JsValue };
 
 use archivum_core::{
     blob_storage::{ blob::DataBlob, blob_store::ArchivumBlobServerStore },
-    node::{ NodeId, NodeRecord },
+    node::{ Node, NodeId },
+    node_type::NodeType,
     state::repository::Repository as CoreRepository,
-    tag::{ TagId, TagRecord },
+    tag::{ TagColors, TagId, TagRecord },
 };
 
 use crate::{ metadata_storage::{ LocalstorageMetadataStorage } };
@@ -21,12 +22,12 @@ impl Repository {
     // Constructor and load/save
     //
     #[wasm_bindgen(constructor)]
-    pub fn new(store_url: String) -> Repository {
+    pub fn new(client_id: String, store_url: String) -> Repository {
         // Better panic messages in browser console
         console_error_panic_hook::set_once();
 
         Repository {
-            inner: CoreRepository::new(LocalstorageMetadataStorage),
+            inner: CoreRepository::new(client_id.parse().unwrap(), LocalstorageMetadataStorage),
             blob_store: ArchivumBlobServerStore::new(store_url),
         }
     }
@@ -36,25 +37,24 @@ impl Repository {
         self.inner.load_local().await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 
-    #[wasm_bindgen(js_name = "saveLocal")]
-    pub async fn save_local(&mut self) -> Result<(), JsValue> {
-        self.inner.save_local().await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
-    }
-
     //
     // Upsert Tags and Nodes
     //
 
     /// Returns the `NodeId` of the upserted node.
-    #[wasm_bindgen(js_name = "upsertNode")]
-    pub async fn upsert_node(&mut self, node: NodeRecord) -> Result<(), JsValue> {
-        self.inner.upsert_node(node).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+    #[wasm_bindgen(js_name = "createNode")]
+    pub async fn create_node(&mut self, node_data: NodeType) -> Result<(), JsValue> {
+        self.inner.create_node(node_data).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
         Ok(())
     }
 
-    #[wasm_bindgen(js_name = "upsertTag")]
-    pub async fn upsert_tag(&mut self, tag: TagRecord) -> Result<(), JsValue> {
-        self.inner.upsert_tag(tag).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+    #[wasm_bindgen(js_name = "createTag")]
+    pub async fn create_tag(
+        &mut self,
+        path: Vec<String>,
+        color: Option<TagColors>
+    ) -> Result<(), JsValue> {
+        self.inner.create_tag(path, color).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
 
         Ok(())
     }
@@ -64,8 +64,8 @@ impl Repository {
     //
 
     #[wasm_bindgen(js_name = "getAllNodes")]
-    pub fn get_all_nodes(&self) -> Result<Vec<NodeRecord>, JsValue> {
-        Ok(self.inner.iter_nodes().cloned().collect::<Vec<NodeRecord>>())
+    pub fn get_all_nodes(&self) -> Result<Vec<Node>, JsValue> {
+        Ok(self.inner.iter_nodes().collect::<Vec<Node>>())
     }
 
     #[wasm_bindgen(js_name = "getAllTags")]
@@ -135,7 +135,7 @@ impl Repository {
     }
 
     #[wasm_bindgen(js_name = "getNodesWithTag")]
-    pub fn get_nodes_with_tag(&self, tag_id: TagId) -> Vec<NodeRecord> {
+    pub fn get_nodes_with_tag(&self, tag_id: TagId) -> Vec<Node> {
         let Some(node_ids) = self.inner.get_nodes_with_tag(tag_id) else {
             return Vec::new();
         };
@@ -143,25 +143,12 @@ impl Repository {
         let mut nodes = Vec::new();
 
         node_ids.iter().for_each(|node_id| {
-            if let Some(node) = self.inner.get_node(*node_id).cloned() {
+            if let Some(node) = self.inner.get_node(*node_id) {
                 nodes.push(node);
             }
         });
 
         nodes
-    }
-
-    //
-    // Get next IDs
-    //
-
-    #[wasm_bindgen(js_name = "getNextNodeId")]
-    pub fn get_next_node_id(&mut self) -> NodeId {
-        self.inner.get_next_node_id()
-    }
-    #[wasm_bindgen(js_name = "getNextTagId")]
-    pub fn get_next_tag_id(&mut self) -> TagId {
-        self.inner.get_next_tag_id()
     }
 
     //

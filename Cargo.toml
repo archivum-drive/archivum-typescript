@@ -1,6 +1,6 @@
 [package]
 name = "archivum-typescript"
-version = "0.1.0-3"
+version = "0.1.0-4"
 edition = "2024"
 repository = "https://github.com/archivum-drive/archivum-typescript"
 
@@ -30,3 +30,5 @@ serde = "1.0.228"
 wasm-bindgen-futures = "0.4.56"
 thiserror = "2.0.17"
 gloo-storage = "0.3.0"
+serde_json = "1.0.149"
+uuid = { version = "1.19.0", features = ["serde", "v4", "js"] }
