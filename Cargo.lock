@@ -33,7 +33,7 @@ dependencies = [
 
 [[package]]
 name = "archivum-typescript"
-version = "0.1.0-5"
+version = "0.1.0-6"
 dependencies = [
  "archivum-core",
  "console_error_panic_hook",
