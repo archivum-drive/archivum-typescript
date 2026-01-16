@@ -1,9 +1,9 @@
-use archivum_core::state::metadata_storage::{ LocalMetadataStorage };
+use archivum_core::state::sync::metadata_storage::LocalMetadataStore;
 use gloo_storage::{ LocalStorage, Storage };
 
 pub struct LocalstorageMetadataStorage;
 
-impl LocalMetadataStorage for LocalstorageMetadataStorage {
+impl LocalMetadataStore for LocalstorageMetadataStorage {
     type Error = LocalstorageMetadataStorageError;
 
     async fn save_event(

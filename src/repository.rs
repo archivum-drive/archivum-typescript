@@ -1,12 +1,12 @@
 use wasm_bindgen::{ prelude::wasm_bindgen, JsValue };
 
 use archivum_core::{
-    blob_storage::{ blob::DataBlob, blob_store::ArchivumBlobServerStore },
+    blob::BlobId,
     node::{ Node, NodeId },
     node_type::NodeType,
     state::{
         repository::Repository as CoreRepository,
-        sync::archivum_metadata_server_storage::ArchivumMetadataServerStorage,
+        sync::metadata_storage::RemoteMetadataStore,
     },
     tag::{ TagColors, TagId, TagRecord },
 };
@@ -16,8 +16,7 @@ use crate::{ metadata_storage::{ LocalstorageMetadataStorage } };
 #[wasm_bindgen]
 pub struct Repository {
     inner: CoreRepository<LocalstorageMetadataStorage>,
-    metadata_storage: ArchivumMetadataServerStorage,
-    blob_store: ArchivumBlobServerStore,
+    metadata_storage: RemoteMetadataStore,
 }
 
 #[wasm_bindgen]
@@ -35,9 +34,12 @@ impl Repository {
         console_error_panic_hook::set_once();
 
         Repository {
-            inner: CoreRepository::new(client_id.parse().unwrap(), LocalstorageMetadataStorage),
-            metadata_storage: ArchivumMetadataServerStorage::new(metadata_server_url),
-            blob_store: ArchivumBlobServerStore::new(blob_store_url),
+            inner: CoreRepository::new(
+                client_id.parse().unwrap(),
+                LocalstorageMetadataStorage,
+                blob_store_url
+            ),
+            metadata_storage: RemoteMetadataStore::new(metadata_server_url),
         }
     }
 
@@ -179,14 +181,16 @@ impl Repository {
     //
 
     #[wasm_bindgen(js_name = "uploadBlob")]
-    pub async fn upload_blob(&mut self, data: &[u8]) -> Result<DataBlob, JsValue> {
-        self.inner
-            .upload_data(&mut self.blob_store, data).await
-            .map_err(|e| JsValue::from_str(&format!("{e:?}")))
+    pub async fn upload_data_as_blob(&mut self, data: &[u8]) -> Result<BlobId, JsValue> {
+        let blob_id = self.inner
+            .upload_data_as_blob(data).await
+            .map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+
+        Ok(blob_id)
     }
 
     #[wasm_bindgen(js_name = "downloadBlob")]
-    pub async fn download_blob(&mut self, blob: DataBlob) -> Result<Vec<u8>, JsValue> {
-        blob.retrieve_data(&self.blob_store).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
+    pub async fn get_blob_data(&mut self, blob_id: BlobId) -> Result<Vec<u8>, JsValue> {
+        self.inner.get_blob_data(&blob_id).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 }
