@@ -1,4 +1,4 @@
-use archivum_core::state::sync::metadata_storage::LocalMetadataStore;
+use archivum_core::state::sync::LocalMetadataStore;
 use gloo_storage::{ LocalStorage, Storage };
 
 pub struct LocalstorageMetadataStorage;

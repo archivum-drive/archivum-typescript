@@ -4,10 +4,7 @@ use archivum_core::{
     blob::BlobId,
     node::{ Node, NodeId },
     node_type::NodeType,
-    state::{
-        repository::Repository as CoreRepository,
-        sync::metadata_storage::RemoteMetadataStore,
-    },
+    state::{ Repository as CoreRepository, sync::RemoteMetadataStore },
     tag::{ TagColors, TagId, TagRecord },
 };
 
@@ -68,8 +65,10 @@ impl Repository {
 
     /// Returns the `NodeId` of the upserted node.
     #[wasm_bindgen(js_name = "createNode")]
-    pub async fn create_node(&mut self, node_data: NodeType) -> Result<(), JsValue> {
-        self.inner.create_node(node_data).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+    pub async fn create_node(&mut self, title: String, node_data: NodeType) -> Result<(), JsValue> {
+        self.inner
+            .create_node(title, node_data).await
+            .map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
         Ok(())
     }
 

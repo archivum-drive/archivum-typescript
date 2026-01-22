@@ -13,8 +13,8 @@ dependencies = [
 
 [[package]]
 name = "archivum-core"
-version = "0.1.0-3"
-source = "git+https://github.com/archivum-drive/archivum-core.git?branch=main#3983ce1317965af2dd1af091177f40b205083b76"
+version = "0.1.0-5"
+source = "git+https://github.com/archivum-drive/archivum-core.git?branch=main#4a2b25982843ed22522f706399254db50697271d"
 dependencies = [
  "blake3",
  "crdts",
@@ -33,7 +33,7 @@ dependencies = [
 
 [[package]]
 name = "archivum-typescript"
-version = "0.1.0-6"
+version = "0.1.0-7"
 dependencies = [
  "archivum-core",
  "console_error_panic_hook",
