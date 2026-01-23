@@ -4,7 +4,12 @@ use archivum_core::{
     blob::{ BlobId, BlobRecord },
     node::{ Node, NodeId },
     node_type::NodeType,
-    state::{ ClientId, Repository as CoreRepository, sync::RemoteMetadataStore },
+    state::{
+        ClientId,
+        Repository as CoreRepository,
+        node_status::NodeStatus,
+        sync::RemoteMetadataStore,
+    },
     tag::{ TagColors, TagId, TagRecord },
 };
 
@@ -111,6 +116,11 @@ impl Repository {
     #[wasm_bindgen(js_name = "getBlobRecord")]
     pub fn get_blob_record(&self, blob_id: BlobId) -> Option<BlobRecord> {
         self.inner.get_blob_record(&blob_id).cloned()
+    }
+
+    #[wasm_bindgen(js_name = "getNodeStatus")]
+    pub fn get_node_status(&self, node_id: NodeId) -> Option<NodeStatus> {
+        self.inner.get_node_status(&node_id)
     }
 
     //
