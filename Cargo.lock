@@ -13,8 +13,8 @@ dependencies = [
 
 [[package]]
 name = "archivum-core"
-version = "0.1.0-5"
-source = "git+https://github.com/archivum-drive/archivum-core.git?branch=main#4a2b25982843ed22522f706399254db50697271d"
+version = "0.1.0-7"
+source = "git+https://github.com/archivum-drive/archivum-core.git?branch=main#c684714efbd89b7709db309aa5b6f4b2be466e2f"
 dependencies = [
  "blake3",
  "crdts",
@@ -33,7 +33,7 @@ dependencies = [
 
 [[package]]
 name = "archivum-typescript"
-version = "0.1.0-7"
+version = "0.1.0-8"
 dependencies = [
  "archivum-core",
  "console_error_panic_hook",
@@ -1131,6 +1131,8 @@ dependencies = [
  "rustls",
  "rustls-pki-types",
  "rustls-platform-verifier",
+ "serde",
+ "serde_json",
  "sync_wrapper",
  "tokio",
  "tokio-rustls",

@@ -1,10 +1,10 @@
 use wasm_bindgen::{ prelude::wasm_bindgen, JsValue };
 
 use archivum_core::{
-    blob::BlobId,
+    blob::{ BlobId, BlobRecord },
     node::{ Node, NodeId },
     node_type::NodeType,
-    state::{ Repository as CoreRepository, sync::RemoteMetadataStore },
+    state::{ ClientId, Repository as CoreRepository, sync::RemoteMetadataStore },
     tag::{ TagColors, TagId, TagRecord },
 };
 
@@ -32,7 +32,7 @@ impl Repository {
 
         Repository {
             inner: CoreRepository::new(
-                client_id.parse().unwrap(),
+                ClientId::parse_str(&client_id).unwrap(),
                 LocalstorageMetadataStorage,
                 blob_store_url
             ),
@@ -108,6 +108,11 @@ impl Repository {
         Ok(tag)
     }
 
+    #[wasm_bindgen(js_name = "getBlobRecord")]
+    pub fn get_blob_record(&self, blob_id: BlobId) -> Option<BlobRecord> {
+        self.inner.get_blob_record(&blob_id).cloned()
+    }
+
     //
     // delete operations
     //
@@ -120,6 +125,17 @@ impl Repository {
     #[wasm_bindgen(js_name = "deleteTag")]
     pub async fn delete_tag(&mut self, tag_id: TagId) -> Result<(), JsValue> {
         self.inner.delete_tag(tag_id).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
+        Ok(())
+    }
+
+    //
+    // update operations
+    //
+    #[wasm_bindgen(js_name = "renameNode")]
+    pub async fn rename_node(&mut self, node_id: NodeId, new_title: String) -> Result<(), JsValue> {
+        self.inner
+            .rename_node(node_id, new_title).await
+            .map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
         Ok(())
     }
 

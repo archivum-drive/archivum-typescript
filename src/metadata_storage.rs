@@ -1,4 +1,8 @@
-use archivum_core::state::sync::LocalMetadataStore;
+use archivum_core::state::sync::{
+    LocalMetadataStore,
+    RepoState,
+    event::{ EventId, RepoEventContainer },
+};
 use gloo_storage::{ LocalStorage, Storage };
 
 pub struct LocalstorageMetadataStorage;
@@ -6,46 +10,50 @@ pub struct LocalstorageMetadataStorage;
 impl LocalMetadataStore for LocalstorageMetadataStorage {
     type Error = LocalstorageMetadataStorageError;
 
-    async fn save_event(
-        &mut self,
-        event: archivum_core::state::sync::event::RepoEvent
-    ) -> Result<(), Self::Error> {
-        let mut events = self.load_events().await.unwrap_or_else(|_| vec![]);
+    async fn save_event(&mut self, event: RepoEventContainer) -> Result<(), Self::Error> {
+        let mut events = get_all_events()?;
         events.push(event);
 
-        let serialized = serde_json
-            ::to_string(&events)
-            .map_err(|e|
-                LocalstorageMetadataStorageError::LocalstorageError(
-                    format!("Serialization error: {e:?}")
-                )
-            )?;
-        LocalStorage::set("archivum_repo_events", serialized).map_err(|e|
-            LocalstorageMetadataStorageError::LocalstorageError(
-                format!("Localstorage set error: {e:?}")
-            )
+        LocalStorage::set("archivum_repo_events", events).map_err(|e|
+            LocalstorageMetadataStorageError::LocalstorageError(e.to_string())
         )?;
-
         Ok(())
     }
 
-    async fn load_events(
-        &self
-    ) -> Result<Vec<archivum_core::state::sync::event::RepoEvent>, Self::Error> {
-        let serialized = LocalStorage::get::<String>("archivum_repo_events").map_err(|e|
-            LocalstorageMetadataStorageError::LocalstorageError(
-                format!("Localstorage get error: {e:?}")
-            )
-        )?;
-        let events = serde_json
-            ::from_str(&serialized)
-            .map_err(|e|
+    // todo: needs rewrite for IndexedDB or similar
+    async fn load_event(&self, id: &EventId) -> Result<RepoEventContainer, Self::Error> {
+        let events = get_all_events()?;
+
+        let event = events
+            .into_iter()
+            .find(|e| e.get_id() == id)
+            .ok_or_else(||
                 LocalstorageMetadataStorageError::LocalstorageError(
-                    format!("Deserialization error: {e:?}")
+                    format!("Event with ID {:?} not found", id)
                 )
             )?;
 
-        Ok(events)
+        Ok(event)
+    }
+
+    async fn save_sync_state(&mut self, state: RepoState) -> Result<(), Self::Error> {
+        LocalStorage::set("archivum_repo_sync_state", state).map_err(|e|
+            LocalstorageMetadataStorageError::LocalstorageError(e.to_string())
+        )?;
+        Ok(())
+    }
+
+    async fn load_sync_state(&self) -> Result<RepoState, Self::Error> {
+        LocalStorage::get("archivum_repo_sync_state").map_err(|e|
+            LocalstorageMetadataStorageError::LocalstorageError(e.to_string())
+        )
+    }
+}
+
+fn get_all_events() -> Result<Vec<RepoEventContainer>, LocalstorageMetadataStorageError> {
+    match LocalStorage::get("archivum_repo_events") {
+        Ok(events) => Ok(events),
+        Err(e) => Err(LocalstorageMetadataStorageError::LocalstorageError(e.to_string())),
     }
 }
 
