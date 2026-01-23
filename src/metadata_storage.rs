@@ -3,7 +3,7 @@ use archivum_core::state::sync::{
     RepoState,
     event::{ EventId, RepoEventContainer },
 };
-use gloo_storage::{ LocalStorage, Storage };
+use gloo_storage::{ LocalStorage, Storage, errors::StorageError };
 
 pub struct LocalstorageMetadataStorage;
 
@@ -44,15 +44,24 @@ impl LocalMetadataStore for LocalstorageMetadataStorage {
     }
 
     async fn load_sync_state(&self) -> Result<RepoState, Self::Error> {
-        LocalStorage::get("archivum_repo_sync_state").map_err(|e|
-            LocalstorageMetadataStorageError::LocalstorageError(e.to_string())
-        )
+        let state = LocalStorage::get("archivum_repo_sync_state");
+        match state {
+            Ok(s) => Ok(s),
+            Err(StorageError::KeyNotFound(_)) => Ok(RepoState::default()), // Return default state if not found
+            Err(_) =>
+                Err(
+                    LocalstorageMetadataStorageError::LocalstorageError(
+                        "Failed to load sync state".to_string()
+                    )
+                ),
+        }
     }
 }
 
 fn get_all_events() -> Result<Vec<RepoEventContainer>, LocalstorageMetadataStorageError> {
     match LocalStorage::get("archivum_repo_events") {
         Ok(events) => Ok(events),
+        Err(StorageError::KeyNotFound(_)) => Ok(Vec::new()), // No events stored yet
         Err(e) => Err(LocalstorageMetadataStorageError::LocalstorageError(e.to_string())),
     }
 }
