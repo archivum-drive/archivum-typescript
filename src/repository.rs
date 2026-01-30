@@ -13,12 +13,11 @@ use archivum_core::{
     tag::{ TagColors, TagId, TagRecord },
 };
 
-use crate::{ metadata_storage::{ LocalstorageMetadataStorage } };
+use crate::{ blob_storage::IndexedDbBlobStorage, metadata_storage::IndexedDbMetadataStorage };
 
 #[wasm_bindgen]
 pub struct Repository {
-    inner: CoreRepository<LocalstorageMetadataStorage>,
-    metadata_storage: RemoteMetadataStore,
+    inner: CoreRepository<IndexedDbMetadataStorage, IndexedDbBlobStorage>,
 }
 
 #[wasm_bindgen]
@@ -30,38 +29,44 @@ impl Repository {
     pub fn new(
         client_id: String,
         metadata_server_url: String,
-        blob_store_url: String
+        max_blob_size_bytes: u64,
+        preferred_chunk_size_bytes: u64
     ) -> Repository {
         // Better panic messages in browser console
         console_error_panic_hook::set_once();
 
+        let rms = RemoteMetadataStore::new(metadata_server_url.clone());
+
         Repository {
             inner: CoreRepository::new(
                 ClientId::parse_str(&client_id).unwrap(),
-                LocalstorageMetadataStorage,
-                blob_store_url
+                IndexedDbMetadataStorage,
+                IndexedDbBlobStorage,
+                rms,
+                max_blob_size_bytes,
+                preferred_chunk_size_bytes
             ),
-            metadata_storage: RemoteMetadataStore::new(metadata_server_url),
         }
     }
 
     #[wasm_bindgen(js_name = "pullRemote")]
     pub async fn pull_remote(&mut self) -> Result<(), JsValue> {
-        self.inner
-            .pull_remote(&self.metadata_storage).await
-            .map_err(|e| JsValue::from_str(&format!("{e:?}")))
+        self.inner.pull_remote().await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 
     #[wasm_bindgen(js_name = "pushRemote")]
     pub async fn push_remote(&mut self) -> Result<(), JsValue> {
-        self.inner
-            .push_remote(&self.metadata_storage).await
-            .map_err(|e| JsValue::from_str(&format!("{e:?}")))
+        self.inner.push_remote().await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 
     #[wasm_bindgen(js_name = "loadLocal")]
     pub async fn load_local(&mut self) -> Result<(), JsValue> {
         self.inner.load_local().await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
+    }
+
+    #[wasm_bindgen(js_name = "syncAll")]
+    pub async fn sync_all(&mut self, url: String) -> Result<(), JsValue> {
+        self.inner.sync_all(&url).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 
     //
@@ -205,17 +210,23 @@ impl Repository {
     // Data Blob operations
     //
 
-    #[wasm_bindgen(js_name = "uploadBlob")]
-    pub async fn upload_data_as_blob(&mut self, data: &[u8]) -> Result<BlobId, JsValue> {
+    #[wasm_bindgen(js_name = "storeBlob")]
+    pub async fn store_data_as_blob(&mut self, data: &[u8]) -> Result<BlobId, JsValue> {
         let blob_id = self.inner
-            .upload_data_as_blob(data).await
+            .store_data_as_blob(data).await
             .map_err(|e| JsValue::from_str(&format!("{e:?}")))?;
 
         Ok(blob_id)
     }
 
     #[wasm_bindgen(js_name = "downloadBlob")]
-    pub async fn get_blob_data(&mut self, blob_id: BlobId) -> Result<Vec<u8>, JsValue> {
-        self.inner.get_blob_data(&blob_id).await.map_err(|e| JsValue::from_str(&format!("{e:?}")))
+    pub async fn get_blob_data(
+        &mut self,
+        url: String,
+        blob_id: BlobId
+    ) -> Result<Vec<u8>, JsValue> {
+        self.inner
+            .get_blob_data(&url, &blob_id).await
+            .map_err(|e| JsValue::from_str(&format!("{e:?}")))
     }
 }
